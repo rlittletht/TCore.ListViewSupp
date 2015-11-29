@@ -60,7 +60,7 @@ namespace TCore.ListViewSupp
             return false; // Stop the enum
         }
 
-        private static ColumnHeader[] GetOrderedHeaders(ListView lv)
+        public static ColumnHeader[] GetOrderedHeaders(ListView lv)
         {
             ColumnHeader[] rgColumnHeader = new ColumnHeader[lv.Columns.Count];
 
@@ -76,8 +76,7 @@ namespace TCore.ListViewSupp
         {
             // This call indirectly calls EnumWindowCallBack which sets _headerRect
             // to the area occupied by the ListView's header bar.
-            EnumChildWindows(
-                lv.Handle, new EnumWinCallBack(EnumWindowCallBack), IntPtr.Zero);
+            EnumChildWindows(lv.Handle, new EnumWinCallBack(EnumWindowCallBack), IntPtr.Zero);
 
             // If the mouse position is in the header bar, cancel the display
             // of the regular context menu and display the column header context 
@@ -86,23 +85,38 @@ namespace TCore.ListViewSupp
                 {
                 e.Cancel = true;
 
-                // The xoffset is how far the mouse is from the left edge of the header.
-                int xoffset = Control.MousePosition.X - m_rcHeader.Left;
-
-                // Iterate through the column headers in the order they are displayed, 
-                // adding up their widths as we go.  When the sum exceeds the xoffset, 
-                // we know the mouse is on the current header. 
-                int sum = 0;
-                foreach (ColumnHeader header in GetOrderedHeaders(lv))
-                    {
-                    sum += header.Width;
-                    if (sum > xoffset)
-                        {
-                        return header;
-                        }
-                    }
+                return ColumnFromPoint(lv, Control.MousePosition.X - m_rcHeader.Left);
                 }
             return null; // either not in the header area, or couldn't find the header
+        }
+
+        /* C O L U M N  F R O M  P O I N T */
+        /*----------------------------------------------------------------------------
+        	%%Function: ColumnFromPoint
+        	%%Qualified: TCore.ListViewSupp.HeaderSupp.ColumnFromPoint
+        	%%Contact: rlittle
+        	
+            Given an X coordinate (in control relative units), return the columnheader
+            for the column that the x is within.
+        ----------------------------------------------------------------------------*/
+        public static ColumnHeader ColumnFromPoint(ListView lv, int dx)
+        {
+            // The xoffset is how far the mouse is from the left edge of the header.
+
+            // Iterate through the column headers in the order they are displayed, 
+            // adding up their widths as we go.  When the sum exceeds the xoffset, 
+            // we know the mouse is on the current header. 
+            int dxSum = 0;
+
+            foreach (ColumnHeader ch in GetOrderedHeaders(lv))
+                {
+                dxSum += ch.Width;
+                if (dxSum > dx)
+                    {
+                    return ch;
+                    }
+                }
+            return null;
         }
     }
 }
